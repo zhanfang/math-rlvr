@@ -2,7 +2,7 @@
 
 Single-machine learning project for understanding Math RLVR step by step.
 
-Stage 1 environment validation is complete. The current active stage is GSM8K data loading and baseline inspection. Training, reward functions, model download, Math-Verify, vLLM, and multi-card frameworks are later milestones.
+Stage 1 environment validation, stage 2 GSM8K data inspection, and stage 3 reward-function prototyping are complete. The next milestone is a minimal single-machine GRPO training loop. Math-Verify, vLLM, and multi-card frameworks are later milestones.
 
 ## Stage 1: Environment
 
@@ -78,6 +78,23 @@ Expected result:
 
 The first initialization run may need network access to download the dataset cache from Hugging Face. After the dataset is cached, later inspections can reuse `data/hf_datasets/`.
 
+## Stage 3: Reward Functions
+
+Run the offline reward-function check:
+
+```bash
+.venv/bin/python scripts/check_reward_functions.py
+```
+
+Expected result:
+
+- The check uses local hard-coded examples only.
+- Model completions use `<reasoning>...</reasoning><answer>...</answer>`.
+- The script prints each sample's extracted model answer, extracted GSM8K-style expected answer, correctness reward, and format reward.
+- Correctness reward returns `1.0` for lightweight numeric equivalence and `0.0` otherwise.
+- Format reward returns `1.0` only when both reasoning and answer tags are present and non-empty.
+- The check does not download datasets, download model weights, run model generation, train, or score an evaluation set.
+
 ## Next Stage
 
-After GSM8K loading and answer extraction are stable, stage 3 can add reward-function experiments with local hard-coded examples.
+After reward functions work on local examples, stage 4 can add a minimal single-machine GRPO training loop.

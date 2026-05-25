@@ -46,7 +46,7 @@ openspec/changes/single-machine-learning-rlvr/
 - 第一阶段只实现环境安装和 smoke check。
 - 后续 GRPO 训练、奖励函数、评估、Math-Verify、vLLM、多卡框架都放入后续阶段。
 
-当前正在执行阶段 2，对应 OpenSpec change：
+阶段 2 已完成，对应 OpenSpec change：
 
 ```text
 openspec/changes/stage-2-gsm8k-data-baseline/
@@ -58,6 +58,19 @@ openspec/changes/stage-2-gsm8k-data-baseline/
 - 实现 GSM8K 标准答案抽取。
 - 提供离线抽取验证。
 - 不下载模型权重，不训练，不做 reward 或评估打分。
+
+阶段 3 已完成，对应 OpenSpec change：
+
+```text
+openspec/changes/stage-3-reward-functions/
+```
+
+这个 change 的边界是：
+
+- 规定模型输出格式为 `<reasoning>...</reasoning><answer>...</answer>`。
+- 实现模型答案抽取、轻量数值等价、正确性 reward 和格式 reward。
+- 用本地硬编码样例做离线验证。
+- 不下载模型权重，不运行模型生成，不做 GRPO 训练或正式评估。
 
 ## 阶段 1：安装环境
 
@@ -205,6 +218,18 @@ data/hf_datasets/
 - 实现正确性 reward 和轻量格式 reward。
 - 用手写样例测试 reward 是否符合预期。
 
+### 检查命令
+
+```bash
+.venv/bin/python scripts/check_reward_functions.py
+```
+
+预期结果：
+
+- 使用本地硬编码样例，不下载数据集或模型权重。
+- 打印每个样例的模型答案抽取结果、标准答案、正确性 reward 和格式 reward。
+- 覆盖正确答案、错误答案、分数与小数等价、逗号数字等价、缺少标签和空标签。
+
 这一阶段仍然可以不训练。
 
 ## 阶段 4：最小 GRPO 训练
@@ -259,11 +284,13 @@ verl / OpenRLHF：多卡和更大规模训练
 下一步只做一件事：
 
 ```text
-实现阶段 2：GSM8K 数据加载、样例观察和标准答案抽取
+开始阶段 4：最小 GRPO 训练规划
 ```
 
 对应 OpenSpec 任务见：
 
 ```text
-openspec/changes/stage-2-gsm8k-data-baseline/tasks.md
+待创建新的阶段 4 OpenSpec change
 ```
+
+阶段 4 仍应保持单机、小模型、小数据、小步数，只先跑通最小训练闭环。
