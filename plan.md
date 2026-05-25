@@ -77,27 +77,33 @@ README.md
 
 ### 安装命令
 
-推荐使用 conda：
+当前仓库已使用 `.venv` 跑通阶段 1，优先使用这条路径：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+如果不激活环境，也可以直接使用：
+
+```bash
+.venv/bin/python scripts/smoke_check_env.py
+```
+
+conda 保留为可选路径：
 
 ```bash
 conda env create -f environment.yml
 conda activate math-rlvr
 ```
 
-如果环境已存在，可以更新：
+如果 conda 环境已存在，可以更新：
 
 ```bash
 conda env update -f environment.yml --prune
 conda activate math-rlvr
-```
-
-如果没有 conda，也可以使用 Python 3.10 或 3.11 创建 venv：
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
 
 ### 检查命令

@@ -1,6 +1,5 @@
-.codex/
-.trae/
-__pycache__/
-*.pyc
-.DS_Store
 .venv/
+__pycache__/
+*.py[cod]
+outputs/
+reports/

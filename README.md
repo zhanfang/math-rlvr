@@ -6,39 +6,39 @@ The current active stage is environment installation and validation. Training, r
 
 ## Stage 1: Environment
 
-Recommended path with conda:
+This workspace currently uses a local `.venv` environment. Use this path first:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Run the smoke check from the activated environment:
+
+```bash
+python scripts/smoke_check_env.py
+```
+
+Or run it directly without activation:
+
+```bash
+.venv/bin/python scripts/smoke_check_env.py
+```
+
+Conda remains available as an optional alternative:
 
 ```bash
 conda env create -f environment.yml
 conda activate math-rlvr
 ```
 
-If the environment already exists, update it:
+If the conda environment already exists, update it:
 
 ```bash
 conda env update -f environment.yml --prune
 conda activate math-rlvr
-```
-
-Alternative path with Python 3.10 or 3.11 and venv:
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Run the smoke check:
-
-```bash
-python scripts/smoke_check_env.py
-```
-
-If your shell only has `python3`, use:
-
-```bash
-python3 scripts/smoke_check_env.py
 ```
 
 Expected result:
@@ -52,4 +52,3 @@ Stage 1 does not download model weights or datasets and does not require vLLM, R
 ## Next Stage
 
 After the smoke check passes, stage 2 can add a small GSM8K data loading and baseline inspection script.
-# math-rlvr
