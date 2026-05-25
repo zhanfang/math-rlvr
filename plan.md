@@ -185,17 +185,17 @@ Transformers / Datasets / Accelerate / PEFT / TRL 导入成功
 离线检查答案抽取：
 
 ```bash
-.venv/bin/python scripts/check_gsm8k_answer_extraction.py
+.venv/bin/python scripts/verify_gsm8k_answers.py
 ```
 
 检查 GSM8K 小子集：
 
 ```bash
-.venv/bin/python scripts/init_gsm8k_dataset.py
+.venv/bin/python scripts/cache_gsm8k_dataset.py
 ```
 
 ```bash
-.venv/bin/python scripts/inspect_gsm8k_data.py --split train --limit 3
+.venv/bin/python scripts/inspect_gsm8k_dataset.py --split train --limit 3
 ```
 
 数据集默认初始化到项目内：
@@ -221,7 +221,7 @@ data/hf_datasets/
 ### 检查命令
 
 ```bash
-.venv/bin/python scripts/check_reward_functions.py
+.venv/bin/python scripts/verify_answer_rewards.py
 ```
 
 预期结果：
@@ -243,11 +243,26 @@ data/hf_datasets/
 - 数据先选 GSM8K 小子集。
 - 训练步数先设很小，只确认训练闭环能跑通。
 
+### 检查命令
+
+先运行 dry-run，不下载模型、不训练：
+
+```bash
+.venv/bin/python scripts/run_minimal_grpo_training.py --dry-run
+```
+
+dry-run 通过后，如果本机内存和网络允许，再运行极小真实训练：
+
+```bash
+.venv/bin/python scripts/run_minimal_grpo_training.py --max-steps 1 --train-limit 2
+```
+
 验收重点：
 
 - 能看到 reward 日志。
 - 能保存 LoRA adapter。
 - 能解释每个 reward 的作用。
+- 输出目录为 `outputs/stage-4-minimal-grpo/`，不进入 git。
 
 ## 阶段 5：独立评估与失败分析
 
@@ -284,13 +299,13 @@ verl / OpenRLHF：多卡和更大规模训练
 下一步只做一件事：
 
 ```text
-开始阶段 4：最小 GRPO 训练规划
+执行阶段 4：最小 GRPO 训练 dry-run 与极小训练闭环
 ```
 
 对应 OpenSpec 任务见：
 
 ```text
-待创建新的阶段 4 OpenSpec change
+openspec/changes/stage-4-minimal-grpo-training/tasks.md
 ```
 
 阶段 4 仍应保持单机、小模型、小数据、小步数，只先跑通最小训练闭环。

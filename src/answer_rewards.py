@@ -10,12 +10,12 @@ _ANSWER_RE = re.compile(r"<answer>(.*?)</answer>", re.DOTALL)
 _REASONING_RE = re.compile(r"<reasoning>(.*?)</reasoning>", re.DOTALL)
 
 
-def clean_reward_answer(answer: str) -> str:
+def normalize_answer_text(answer: str) -> str:
     """Clean an answer string before reward comparison."""
     return answer.strip().replace(",", "")
 
 
-def extract_xml_answer(completion: str) -> str:
+def extract_answer_from_completion(completion: str) -> str:
     """Extract the final answer from an XML-like model completion."""
     match = _ANSWER_RE.search(completion)
     if not match:
@@ -23,7 +23,7 @@ def extract_xml_answer(completion: str) -> str:
     return match.group(1).strip()
 
 
-def has_required_output_format(completion: str) -> bool:
+def has_structured_answer_format(completion: str) -> bool:
     """Return whether completion has non-empty reasoning and answer blocks."""
     reasoning_match = _REASONING_RE.search(completion)
     answer_match = _ANSWER_RE.search(completion)
@@ -33,7 +33,7 @@ def has_required_output_format(completion: str) -> bool:
 
 
 def _parse_basic_number(answer: str) -> Fraction | None:
-    cleaned = clean_reward_answer(answer)
+    cleaned = normalize_answer_text(answer)
     if not cleaned:
         return None
 
@@ -43,7 +43,7 @@ def _parse_basic_number(answer: str) -> Fraction | None:
         return None
 
 
-def numeric_equal(left: str, right: str) -> bool:
+def answers_match_numerically(left: str, right: str) -> bool:
     """Compare answers with lightweight numeric equivalence.
 
     Integers, decimals, fractions, and comma-grouped numbers are supported.
@@ -56,17 +56,17 @@ def numeric_equal(left: str, right: str) -> bool:
     if left_number is not None and right_number is not None:
         return left_number == right_number
 
-    return clean_reward_answer(left) == clean_reward_answer(right)
+    return normalize_answer_text(left) == normalize_answer_text(right)
 
 
-def correctness_reward(completion: str, expected_answer: str) -> float:
+def score_answer_correctness(completion: str, expected_answer: str) -> float:
     """Return 1.0 when the extracted model answer matches expected_answer."""
-    model_answer = extract_xml_answer(completion)
+    model_answer = extract_answer_from_completion(completion)
     if not model_answer:
         return 0.0
-    return 1.0 if numeric_equal(model_answer, expected_answer) else 0.0
+    return 1.0 if answers_match_numerically(model_answer, expected_answer) else 0.0
 
 
-def format_reward(completion: str) -> float:
+def score_answer_format(completion: str) -> float:
     """Return 1.0 when completion follows the stage 3 output format."""
-    return 1.0 if has_required_output_format(completion) else 0.0
+    return 1.0 if has_structured_answer_format(completion) else 0.0

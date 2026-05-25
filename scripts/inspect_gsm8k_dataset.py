@@ -11,11 +11,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.gsm8k_data import (
+from src.gsm8k_dataset import (
     DEFAULT_DATA_CACHE_DIR,
     GSM8K_CONFIG_NAME,
     GSM8K_DATASET_NAME,
-    load_gsm8k_subset,
+    load_gsm8k_examples,
 )
 
 
@@ -45,7 +45,7 @@ def main() -> int:
     print(f"cache_dir: {args.cache_dir}")
     print("mode: read-only data inspection; no model download, generation, training, reward, or scoring")
 
-    field_names, examples = load_gsm8k_subset(
+    field_names, examples = load_gsm8k_examples(
         split=args.split,
         limit=args.limit,
         cache_dir=args.cache_dir,

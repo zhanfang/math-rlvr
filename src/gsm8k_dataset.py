@@ -19,12 +19,12 @@ class GSM8KExample:
     final_answer: str
 
 
-def clean_gsm8k_answer(answer: str) -> str:
+def normalize_gsm8k_final_answer(answer: str) -> str:
     """Clean the final GSM8K answer string for simple inspection."""
     return answer.strip().replace(",", "")
 
 
-def extract_gsm8k_answer(answer: str) -> str:
+def extract_gsm8k_final_answer(answer: str) -> str:
     """Extract the final answer from a GSM8K answer field.
 
     GSM8K answers usually end with a marker such as `#### 42`.
@@ -32,20 +32,20 @@ def extract_gsm8k_answer(answer: str) -> str:
     symbolic math, or LaTeX parsing yet.
     """
     if "####" in answer:
-        return clean_gsm8k_answer(answer.rsplit("####", 1)[-1])
-    return clean_gsm8k_answer(answer)
+        return normalize_gsm8k_final_answer(answer.rsplit("####", 1)[-1])
+    return normalize_gsm8k_final_answer(answer)
 
 
-def example_from_record(record: dict[str, Any]) -> GSM8KExample:
+def gsm8k_example_from_record(record: dict[str, Any]) -> GSM8KExample:
     raw_answer = str(record["answer"])
     return GSM8KExample(
         question=str(record["question"]),
         raw_answer=raw_answer,
-        final_answer=extract_gsm8k_answer(raw_answer),
+        final_answer=extract_gsm8k_final_answer(raw_answer),
     )
 
 
-def load_gsm8k_subset(
+def load_gsm8k_examples(
     split: str = "train",
     limit: int = 3,
     cache_dir: str | Path | None = None,
@@ -69,4 +69,4 @@ def load_gsm8k_subset(
     else:
         dataset = dataset.select([])
 
-    return field_names, [example_from_record(record) for record in dataset]
+    return field_names, [gsm8k_example_from_record(record) for record in dataset]

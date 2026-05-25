@@ -2,7 +2,7 @@
 
 Single-machine learning project for understanding Math RLVR step by step.
 
-Stage 1 environment validation, stage 2 GSM8K data inspection, and stage 3 reward-function prototyping are complete. The next milestone is a minimal single-machine GRPO training loop. Math-Verify, vLLM, and multi-card frameworks are later milestones.
+Stage 1 environment validation, stage 2 GSM8K data inspection, and stage 3 reward-function prototyping are complete. The current active stage is a minimal single-machine GRPO training loop. Math-Verify, vLLM, and multi-card frameworks are later milestones.
 
 ## Stage 1: Environment
 
@@ -54,19 +54,19 @@ Stage 1 does not download model weights or datasets and does not require vLLM, R
 Run the offline answer extraction check:
 
 ```bash
-.venv/bin/python scripts/check_gsm8k_answer_extraction.py
+.venv/bin/python scripts/verify_gsm8k_answers.py
 ```
 
 Initialize GSM8K into the project-local dataset cache:
 
 ```bash
-.venv/bin/python scripts/init_gsm8k_dataset.py
+.venv/bin/python scripts/cache_gsm8k_dataset.py
 ```
 
 Inspect a small GSM8K subset:
 
 ```bash
-.venv/bin/python scripts/inspect_gsm8k_data.py --split train --limit 3
+.venv/bin/python scripts/inspect_gsm8k_dataset.py --split train --limit 3
 ```
 
 Expected result:
@@ -83,7 +83,7 @@ The first initialization run may need network access to download the dataset cac
 Run the offline reward-function check:
 
 ```bash
-.venv/bin/python scripts/check_reward_functions.py
+.venv/bin/python scripts/verify_answer_rewards.py
 ```
 
 Expected result:
@@ -95,6 +95,29 @@ Expected result:
 - Format reward returns `1.0` only when both reasoning and answer tags are present and non-empty.
 - The check does not download datasets, download model weights, run model generation, train, or score an evaluation set.
 
+## Stage 4: Minimal GRPO Training
+
+Start with the dry-run. It checks dependencies, local GSM8K records, prompt formatting, reward adapters, LoRA config, and GRPO config without loading or downloading model weights:
+
+```bash
+.venv/bin/python scripts/run_minimal_grpo_training.py --dry-run
+```
+
+If the dry-run passes and the machine has enough memory plus model access, run a tiny real training job:
+
+```bash
+.venv/bin/python scripts/run_minimal_grpo_training.py --max-steps 1 --train-limit 2
+```
+
+Expected result:
+
+- Dry-run prints a configuration summary and exits without model download, training, or adapter saving.
+- Real training may download the configured model the first time.
+- The default model is `Qwen/Qwen2.5-0.5B-Instruct`, but `--model-name` can point to another small model or local path.
+- Training uses TRL `GRPOTrainer`, the stage 3 correctness and format rewards, and PEFT LoRA.
+- Outputs go to `outputs/stage-4-minimal-grpo/`, which is ignored by git.
+- On CPU-only machines, real training can be very slow; the point is closure of the training loop, not score improvement.
+
 ## Next Stage
 
-After reward functions work on local examples, stage 4 can add a minimal single-machine GRPO training loop.
+After the minimal GRPO loop is stable, stage 5 can add independent evaluation and failure analysis.

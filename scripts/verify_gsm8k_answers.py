@@ -10,10 +10,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.gsm8k_data import extract_gsm8k_answer
+from src.gsm8k_dataset import extract_gsm8k_final_answer
 
 
-CASES = [
+ANSWER_EXTRACTION_CASES = [
     ("We compute it step by step.\n#### 42", "42"),
     ("Final arithmetic gives a large number.\n#### 1,234", "1234"),
     ("Reasoning omitted.\n####   17   ", "17"),
@@ -26,8 +26,8 @@ def main() -> int:
     print("=" * 40)
 
     failures = []
-    for raw, expected in CASES:
-        actual = extract_gsm8k_answer(raw)
+    for raw, expected in ANSWER_EXTRACTION_CASES:
+        actual = extract_gsm8k_final_answer(raw)
         status = "OK" if actual == expected else "FAIL"
         print(f"[{status}] expected={expected!r} actual={actual!r}")
         if actual != expected:

@@ -28,7 +28,7 @@
 
 1. 使用一个脚本作为阶段 4 入口。
 
-   新增 `scripts/train_minimal_grpo.py`，集中暴露阶段 4 的学习入口。它支持 `--dry-run`、`--model-name`、`--split`、`--train-limit`、`--max-steps`、`--output-dir`、`--cache-dir` 等参数。默认值必须保守，目标是帮助学习者看到训练闭环，而不是获得好成绩。
+   新增 `scripts/run_minimal_grpo_training.py`，集中暴露阶段 4 的学习入口。它支持 `--dry-run`、`--model-name`、`--split`、`--train-limit`、`--max-steps`、`--output-dir`、`--cache-dir` 等参数。默认值必须保守，目标是帮助学习者看到训练闭环，而不是获得好成绩。
 
    备选方案是拆成多个训练、数据和配置脚本。那更接近正式工程，但会让阶段 4 的学习路径变散。
 
@@ -40,7 +40,7 @@
 
 3. Reward 适配层薄而透明。
 
-   新增 TRL reward 适配函数，例如 `grpo_correctness_rewards(completions, answer, **kwargs)` 和 `grpo_format_rewards(completions, **kwargs)`，内部调用阶段 3 的 `correctness_reward` 和 `format_reward`。这样阶段 4 可以保留 reward 组件的可解释性，也便于后续调试模型是否在钻格式漏洞。
+   新增 TRL reward 适配函数，例如 `score_grpo_correctness_rewards(completions, answer, **kwargs)` 和 `score_grpo_format_rewards(completions, **kwargs)`，内部调用阶段 3 的 `score_answer_correctness` 和 `score_answer_format`。这样阶段 4 可以保留 reward 组件的可解释性，也便于后续调试模型是否在钻格式漏洞。
 
    备选方案是把 reward 直接写在训练脚本里。这样实现快，但会破坏阶段 3 已经建立的模块边界。
 

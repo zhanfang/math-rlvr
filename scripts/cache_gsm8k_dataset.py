@@ -11,11 +11,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.gsm8k_data import (
+from src.gsm8k_dataset import (
     DEFAULT_DATA_CACHE_DIR,
     GSM8K_CONFIG_NAME,
     GSM8K_DATASET_NAME,
-    example_from_record,
+    gsm8k_example_from_record,
 )
 
 
@@ -61,7 +61,7 @@ def main() -> int:
         print(f"\n[{split}] rows={len(dataset)} fields={list(dataset.column_names)}")
 
         if len(dataset):
-            example = example_from_record(dataset[0])
+            example = gsm8k_example_from_record(dataset[0])
             print(f"[{split}] first_final_answer={example.final_answer}")
 
         cache_files = dataset.cache_files
