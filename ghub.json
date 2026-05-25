@@ -1,0 +1,10 @@
+{
+  "name": "math-rlvr",
+  "skills": {
+    "openspec-apply-change": "1.0.0",
+    "openspec-archive-change": "1.0.0",
+    "openspec-propose": "1.0.0",
+    "openspec-explore": "1.0.0"
+  },
+  "mcps": {}
+}

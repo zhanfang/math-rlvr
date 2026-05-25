@@ -1,0 +1,15 @@
+name: math-rlvr
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pytorch
+  - pip:
+      - transformers
+      - datasets
+      - accelerate
+      - peft
+      - trl
