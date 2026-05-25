@@ -2,7 +2,7 @@
 
 Single-machine learning project for understanding Math RLVR step by step.
 
-The current active stage is environment installation and validation. Training, reward functions, dataset loading, model download, Math-Verify, vLLM, and multi-card frameworks are later milestones.
+Stage 1 environment validation is complete. The current active stage is GSM8K data loading and baseline inspection. Training, reward functions, model download, Math-Verify, vLLM, and multi-card frameworks are later milestones.
 
 ## Stage 1: Environment
 
@@ -49,6 +49,35 @@ Expected result:
 
 Stage 1 does not download model weights or datasets and does not require vLLM, Ray, DeepSpeed, FSDP, verl, OpenRLHF, or multi-GPU hardware.
 
+## Stage 2: GSM8K Data
+
+Run the offline answer extraction check:
+
+```bash
+.venv/bin/python scripts/check_gsm8k_answer_extraction.py
+```
+
+Initialize GSM8K into the project-local dataset cache:
+
+```bash
+.venv/bin/python scripts/init_gsm8k_dataset.py
+```
+
+Inspect a small GSM8K subset:
+
+```bash
+.venv/bin/python scripts/inspect_gsm8k_data.py --split train --limit 3
+```
+
+Expected result:
+
+- The offline check passes without downloading datasets or model weights.
+- The dataset cache is stored under `data/hf_datasets/`, which is ignored by git.
+- The GSM8K inspection command prints field names, question text, raw answer text, and the extracted final answer.
+- The inspection command is read-only and does not run model generation, training, reward calculation, or scoring.
+
+The first initialization run may need network access to download the dataset cache from Hugging Face. After the dataset is cached, later inspections can reuse `data/hf_datasets/`.
+
 ## Next Stage
 
-After the smoke check passes, stage 2 can add a small GSM8K data loading and baseline inspection script.
+After GSM8K loading and answer extraction are stable, stage 3 can add reward-function experiments with local hard-coded examples.

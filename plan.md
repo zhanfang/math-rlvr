@@ -34,7 +34,7 @@
 
 ## 当前 OpenSpec 变更
 
-当前规划对应的 OpenSpec change：
+阶段 1 已完成，对应 OpenSpec change：
 
 ```text
 openspec/changes/single-machine-learning-rlvr/
@@ -45,6 +45,19 @@ openspec/changes/single-machine-learning-rlvr/
 - 重新规划项目为单机学习版。
 - 第一阶段只实现环境安装和 smoke check。
 - 后续 GRPO 训练、奖励函数、评估、Math-Verify、vLLM、多卡框架都放入后续阶段。
+
+当前正在执行阶段 2，对应 OpenSpec change：
+
+```text
+openspec/changes/stage-2-gsm8k-data-baseline/
+```
+
+这个 change 的边界是：
+
+- 加载 GSM8K 小子集并观察数据结构。
+- 实现 GSM8K 标准答案抽取。
+- 提供离线抽取验证。
+- 不下载模型权重，不训练，不做 reward 或评估打分。
 
 ## 阶段 1：安装环境
 
@@ -142,7 +155,7 @@ Transformers / Datasets / Accelerate / PEFT / TRL 导入成功
 不使用多卡框架
 ```
 
-## 阶段 2：数据与基线评估
+## 阶段 2：数据与基线检查
 
 进入条件：阶段 1 的环境检查通过。
 
@@ -151,9 +164,34 @@ Transformers / Datasets / Accelerate / PEFT / TRL 导入成功
 - 加载 GSM8K 的一个小子集。
 - 了解数据结构中的 question 和 answer。
 - 实现标准答案抽取，例如 `#### 42` -> `42`。
-- 可选：对一个小模型做极小规模 baseline generation。
 
-暂不训练，只观察模型原始输出和答案抽取问题。
+暂不训练，不下载模型，只观察数据结构和答案抽取问题。
+
+### 检查命令
+
+离线检查答案抽取：
+
+```bash
+.venv/bin/python scripts/check_gsm8k_answer_extraction.py
+```
+
+检查 GSM8K 小子集：
+
+```bash
+.venv/bin/python scripts/init_gsm8k_dataset.py
+```
+
+```bash
+.venv/bin/python scripts/inspect_gsm8k_data.py --split train --limit 3
+```
+
+数据集默认初始化到项目内：
+
+```text
+data/hf_datasets/
+```
+
+这个目录会被 `.gitignore` 忽略，不应该提交进 git。第一次初始化 GSM8K 可能需要联网下载 Hugging Face 数据集缓存。这个阶段不做模型生成、训练、reward 计算或评估打分。
 
 ## 阶段 3：奖励函数
 
@@ -221,11 +259,11 @@ verl / OpenRLHF：多卡和更大规模训练
 下一步只做一件事：
 
 ```text
-实现阶段 1：环境安装和 smoke check
+实现阶段 2：GSM8K 数据加载、样例观察和标准答案抽取
 ```
 
 对应 OpenSpec 任务见：
 
 ```text
-openspec/changes/single-machine-learning-rlvr/tasks.md
+openspec/changes/stage-2-gsm8k-data-baseline/tasks.md
 ```
