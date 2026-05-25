@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Stage 4 minimal GRPO training entrypoint."""
+"""Single-machine RLVR training entrypoint."""
 
 from __future__ import annotations
 
@@ -15,9 +15,13 @@ sys.path.insert(0, str(ROOT))
 
 from src.gsm8k_dataset import DEFAULT_DATA_CACHE_DIR
 from src.minimal_grpo_training import (
+    DEFAULT_LOGGING_STEPS,
+    DEFAULT_MAX_COMPLETION_LENGTH,
     DEFAULT_MAX_STEPS,
     DEFAULT_MODEL_NAME,
     DEFAULT_OUTPUT_DIR,
+    DEFAULT_PER_DEVICE_TRAIN_BATCH_SIZE,
+    DEFAULT_SAVE_STEPS,
     DEFAULT_TRAIN_LIMIT,
     score_grpo_correctness_rewards,
     score_grpo_format_rewards,
@@ -30,7 +34,7 @@ from src.minimal_grpo_training import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Stage 4 minimal single-machine GRPO training. Use --dry-run before real training.",
+        description="Single-machine RLVR training. Use --dry-run before real training.",
     )
     parser.add_argument("--dry-run", action="store_true", help="Check dependencies, data, rewards, and config only.")
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME, help="Model name or local model path.")
@@ -50,9 +54,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=str(ROOT / DEFAULT_OUTPUT_DIR),
-        help="Directory for stage 4 training output and LoRA adapter.",
+        help="Directory for training output and LoRA adapter.",
     )
-    parser.add_argument("--per-device-train-batch-size", type=int, default=1, help="Tiny local batch size.")
+    parser.add_argument(
+        "--per-device-train-batch-size",
+        type=int,
+        default=DEFAULT_PER_DEVICE_TRAIN_BATCH_SIZE,
+        help="Per-device batch size tuned for local single-machine training.",
+    )
     parser.add_argument("--gradient-accumulation-steps", type=int, default=1, help="Gradient accumulation steps.")
     parser.add_argument(
         "--steps-per-generation",
@@ -62,10 +71,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--num-generations", type=int, default=2, help="Completions sampled per prompt.")
     parser.add_argument("--max-prompt-length", type=int, default=512, help="Maximum prompt tokens.")
-    parser.add_argument("--max-completion-length", type=int, default=96, help="Maximum completion tokens.")
+    parser.add_argument(
+        "--max-completion-length",
+        type=int,
+        default=DEFAULT_MAX_COMPLETION_LENGTH,
+        help="Maximum completion tokens.",
+    )
     parser.add_argument("--learning-rate", type=float, default=1e-6, help="GRPO learning rate.")
-    parser.add_argument("--logging-steps", type=int, default=1, help="Training log interval.")
-    parser.add_argument("--save-steps", type=int, default=1, help="Trainer save interval.")
+    parser.add_argument("--logging-steps", type=int, default=DEFAULT_LOGGING_STEPS, help="Training log interval.")
+    parser.add_argument("--save-steps", type=int, default=DEFAULT_SAVE_STEPS, help="Trainer save interval.")
     parser.add_argument("--use-cpu", action="store_true", help="Force CPU mode for GRPOConfig.")
     parser.add_argument("--lora-r", type=int, default=8, help="LoRA rank.")
     parser.add_argument("--lora-alpha", type=int, default=16, help="LoRA alpha.")
@@ -144,6 +158,7 @@ def build_run_summary(
         versions.get("cuda_available") is False and versions.get("mps_available") is False
     )
     return {
+        "training_profile": "stage-5-real-rlvr",
         "model_name": args.model_name,
         "split": args.split,
         "train_limit": args.train_limit,
@@ -186,8 +201,8 @@ def load_training_examples(args: argparse.Namespace) -> list[dict[str, str]]:
 
 
 def run_dry_run(args: argparse.Namespace) -> int:
-    print("Stage 4 minimal GRPO dry-run")
-    print("=" * 32)
+    print("Single-machine RLVR dry-run")
+    print("=" * 28)
     print("mode: no model loading, no model download, no training, no LoRA adapter save")
 
     versions = collect_dependency_versions()
@@ -214,8 +229,8 @@ def write_run_summary_json(output_dir: Path, summary: dict[str, Any]) -> None:
 
 
 def run_training(args: argparse.Namespace) -> int:
-    print("Stage 4 minimal GRPO training")
-    print("=" * 31)
+    print("Stage 5 real RLVR training")
+    print("=" * 26)
     print("mode: real training; model weights may be downloaded if not cached")
 
     from trl import GRPOTrainer

@@ -262,20 +262,29 @@ dry-run 通过后，如果本机内存和网络允许，再运行极小真实训
 - 能看到 reward 日志。
 - 能保存 LoRA adapter。
 - 能解释每个 reward 的作用。
-- 输出目录为 `outputs/stage-4-minimal-grpo/`，不进入 git。
+- 输出目录为 `outputs/stage-5-real-rlvr/`，不进入 git。
 
-## 阶段 5：独立评估与失败分析
+## 阶段 5：真实单机 RLVR 训练
 
 进入条件：最小训练能完成。
 
 目标：
 
-- 写独立 eval 脚本。
-- 对比 base model 和 RLVR 后模型。
-- 保存 jsonl 结果。
-- 人工检查失败案例。
+- 把默认参数切到更高吞吐配置。
+- 至少跑一轮中等规模真实训练。
+- 保存更有分析价值的 LoRA adapter。
+- 记录真实耗时和吞吐。
 
-重点不是一次拿高分，而是理解：
+推荐默认值：
+
+- `train_limit=200`
+- `max_steps=100`
+- `per_device_train_batch_size=8`
+- `max_completion_length=48`
+- `logging_steps=10`
+- `save_steps=100`
+
+重点不是立刻冲全集，而是先确认：
 
 - 答案抽取是否可靠。
 - reward 是否被模型钻空子。

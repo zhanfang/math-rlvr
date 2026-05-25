@@ -43,5 +43,5 @@
 - [x] 6.2 运行阶段 2 答案抽取离线检查。
 - [x] 6.3 运行阶段 3 reward 离线检查。
 - [x] 6.4 运行阶段 4 dry-run，确认不下载模型且预检通过。
-- [x] 6.5 如本机网络和资源允许，运行极小真实训练并确认输出目录中保存 LoRA adapter；当前机器未检测到 CUDA/MPS，且模型下载需要网络，因此本轮不运行真实训练。
+- [x] 6.5 如本机网络和资源允许，运行极小真实训练并确认输出目录中保存 LoRA adapter；当前机器已检测到 MPS，并已完成极小真实训练闭环。
 - [x] 6.6 运行 `openspec validate stage-4-minimal-grpo-training --strict`。

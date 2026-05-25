@@ -1,4 +1,4 @@
-"""Helpers for preparing and scoring the stage 4 minimal GRPO run."""
+"""Helpers for preparing and scoring single-machine RLVR training runs."""
 
 from __future__ import annotations
 
@@ -15,9 +15,13 @@ from src.answer_rewards import score_answer_correctness, score_answer_format
 
 
 DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
-DEFAULT_OUTPUT_DIR = Path("outputs/stage-4-minimal-grpo")
-DEFAULT_TRAIN_LIMIT = 2
-DEFAULT_MAX_STEPS = 1
+DEFAULT_OUTPUT_DIR = Path("outputs/stage-5-real-rlvr")
+DEFAULT_TRAIN_LIMIT = 200
+DEFAULT_MAX_STEPS = 100
+DEFAULT_PER_DEVICE_TRAIN_BATCH_SIZE = 8
+DEFAULT_MAX_COMPLETION_LENGTH = 48
+DEFAULT_LOGGING_STEPS = 10
+DEFAULT_SAVE_STEPS = 100
 
 
 PROMPT_TEMPLATE = """Solve this grade-school math problem.

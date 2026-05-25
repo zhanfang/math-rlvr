@@ -103,7 +103,7 @@ Start with the dry-run. It checks dependencies, local GSM8K records, prompt form
 .venv/bin/python scripts/run_minimal_grpo_training.py --dry-run
 ```
 
-If the dry-run passes and the machine has enough memory plus model access, run a tiny real training job:
+If the dry-run passes and the machine has enough memory plus model access, a tiny real training job still works for closure testing:
 
 ```bash
 .venv/bin/python scripts/run_minimal_grpo_training.py --max-steps 1 --train-limit 2
@@ -115,9 +115,29 @@ Expected result:
 - Real training may download the configured model the first time.
 - The default model is `Qwen/Qwen2.5-0.5B-Instruct`, but `--model-name` can point to another small model or local path.
 - Training uses TRL `GRPOTrainer`, the stage 3 correctness and format rewards, and PEFT LoRA.
-- Outputs go to `outputs/stage-4-minimal-grpo/`, which is ignored by git.
+- Tiny closure-test outputs go to `outputs/stage-5-real-rlvr/`, which is ignored by git.
 - On CPU-only machines, real training can be very slow; the point is closure of the training loop, not score improvement.
+
+## Stage 5: Real RLVR Training
+
+After the minimal GRPO loop is stable, stage 5 shifts to a real single-machine RLVR run with throughput-oriented defaults:
+
+```bash
+.venv/bin/python scripts/run_minimal_grpo_training.py
+```
+
+Current stage-5 defaults:
+
+- `train_limit=200`
+- `max_steps=100`
+- `per_device_train_batch_size=8`
+- `max_completion_length=48`
+- `logging_steps=10`
+- `save_steps=100`
+- `output_dir=outputs/stage-5-real-rlvr/`
+
+If you already cached the base model locally, pointing `--model-name` to the local snapshot avoids extra Hub lookup overhead.
 
 ## Next Stage
 
-After the minimal GRPO loop is stable, stage 5 can add independent evaluation and failure analysis.
+After stage 5 produces a more meaningful adapter, the next stage can add independent evaluation and failure analysis.
