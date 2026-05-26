@@ -1,143 +1,170 @@
 # math-rlvr
 
-Single-machine learning project for understanding Math RLVR step by step.
+单机起步、面向数学题的 RLVR（Reinforcement Learning with Verifiable Rewards）学习项目。
 
-Stage 1 environment validation, stage 2 GSM8K data inspection, and stage 3 reward-function prototyping are complete. The current active stage is a minimal single-machine GRPO training loop. Math-Verify, vLLM, and multi-card frameworks are later milestones.
+## 一、项目思想
 
-## Stage 1: Environment
+> 用一个开源小模型，在 GSM8K 上跑通：
+> 模型生成推理与答案 → 程序抽取答案 → 自动验证正确性 → 用 GRPO 更新模型。
 
-This workspace currently uses a local `.venv` environment. Use this path first:
+核心思路：
+
+- **可验证奖励**：数学题答案可程序判定，无需训练 reward model，也不依赖人工标注。
+- **GRPO 而非 PPO**：对同一 prompt 采样多个 completion，按组内 reward 差异更新策略，省掉 critic。
+- **格式 + 正确性双 reward**：正确性 reward 占主导，格式 reward 辅助；避免模型只学格式不学做题。
+- **LoRA 微调**：在小模型 + 单卡条件下保持显存可控，便于反复实验。
+- **分阶段递进**：从环境到云上全量训练，每个阶段只引入一个新关注点。
+
+固定输出格式：
+
+```xml
+<reasoning>
+推理过程
+</reasoning>
+<answer>
+最终答案
+</answer>
+```
+
+## 二、整体流程
+
+```text
+Stage 1  环境就绪  → .venv + requirements.txt
+Stage 2  数据基线  → GSM8K 缓存、抽取 #### 答案
+Stage 3  奖励原型  → correctness / format reward 离线验证
+Stage 4  最小 GRPO → 双 reward 烟雾测试，打通 TRL 链路
+Stage 5  真实 RLVR → 单机吞吐导向的 GRPO 训练
+Stage 6  完整实验  → GSM8K 训练 + 独立 held-out 评估
+Stage 7  云上全量  → RunPod L40S + vLLM，可选 SFT warm-start
+```
+
+每个阶段都有：
+
+- 配置入口在 [src/training/profiles.py](file:///Users/bytedance/Documents/code/github/math-rlvr/src/training/profiles.py)
+- 可执行脚本在 [scripts/run/](file:///Users/bytedance/Documents/code/github/math-rlvr/scripts/run)
+- 离线检查在 [scripts/check/](file:///Users/bytedance/Documents/code/github/math-rlvr/scripts/check)
+
+## 三、目录结构
+
+- [src/training/](file:///Users/bytedance/Documents/code/github/math-rlvr/src/training)：prompt、profile、dataset、reward adapter、runtime、SFT 等训练侧公共模块。
+- [src/answer_rewards.py](file:///Users/bytedance/Documents/code/github/math-rlvr/src/answer_rewards.py)：答案抽取与 correctness / format reward。
+- [src/gsm8k_dataset.py](file:///Users/bytedance/Documents/code/github/math-rlvr/src/gsm8k_dataset.py)：GSM8K 加载与 `####` 答案抽取。
+- [src/minimal_grpo_training.py](file:///Users/bytedance/Documents/code/github/math-rlvr/src/minimal_grpo_training.py)：训练入口的兼容门面。
+- [scripts/run/](file:///Users/bytedance/Documents/code/github/math-rlvr/scripts/run)：训练 / 评估 / SFT / smoke test 入口。
+- [scripts/check/](file:///Users/bytedance/Documents/code/github/math-rlvr/scripts/check)：环境与离线 reward 检查。
+- [scripts/runpod/](file:///Users/bytedance/Documents/code/github/math-rlvr/scripts/runpod)：Stage 7 云上 preflight / smoke / 全量启动脚本。
+- [docker/runpod-stage7/](file:///Users/bytedance/Documents/code/github/math-rlvr/docker/runpod-stage7)：Stage 7 训练镜像。
+
+## 四、环境
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+
+.venv/bin/python scripts/check/smoke_check_env.py
 ```
 
-Run the smoke check from the activated environment:
+要求 Python ≥ 3.10，`torch / transformers / datasets / accelerate / peft / trl` 可正常导入。Stage 1～6 不强依赖 CUDA/vLLM；Stage 7 在 RunPod 上启用 CUDA + vLLM。
+
+## 五、各阶段速查
+
+### Stage 2：GSM8K 数据
 
 ```bash
-python scripts/smoke_check_env.py
+.venv/bin/python scripts/check/verify_gsm8k_answers.py
+.venv/bin/python scripts/data/cache_gsm8k_dataset.py
+.venv/bin/python scripts/data/inspect_gsm8k_dataset.py --split train --limit 3
 ```
 
-Or run it directly without activation:
+数据缓存在 `data/hf_datasets/`（git ignored）。
+
+### Stage 3：奖励函数
 
 ```bash
-.venv/bin/python scripts/smoke_check_env.py
+.venv/bin/python scripts/check/verify_answer_rewards.py
 ```
 
-Conda remains available as an optional alternative:
+校验 `<reasoning>...<answer>...` 解析、数值等价比较、格式 reward 的边界。
+
+### Stage 4：最小 GRPO
 
 ```bash
-conda env create -f environment.yml
-conda activate math-rlvr
+# 不下载模型权重的纯配置 dry-run
+.venv/bin/python scripts/run/stage4_dual_reward_smoke_test.py --dry-run
+
+# 真实双 reward 烟雾训练（需要本地或可访问的小模型）
+.venv/bin/python scripts/run/stage4_dual_reward_smoke_test.py \
+  --model-name Qwen/Qwen2.5-0.5B-Instruct
 ```
 
-If the conda environment already exists, update it:
+目标：在真实 GRPO 日志里同时看到 correctness 与 format reward 为正。
+
+### Stage 5：真实 RLVR
 
 ```bash
-conda env update -f environment.yml --prune
-conda activate math-rlvr
+.venv/bin/python scripts/run/minimal_grpo_training.py
 ```
 
-Expected result:
+吞吐导向的默认参数，输出至 `outputs/stage-5-real-rlvr/`。
 
-- Python is 3.10 or newer.
-- `torch`, `transformers`, `datasets`, `accelerate`, `peft`, and `trl` import successfully.
-- The script reports available PyTorch backends: CPU, CUDA, and/or MPS.
-
-Stage 1 does not download model weights or datasets and does not require vLLM, Ray, DeepSpeed, FSDP, verl, OpenRLHF, or multi-GPU hardware.
-
-## Stage 2: GSM8K Data
-
-Run the offline answer extraction check:
+### Stage 6：完整 GSM8K 实验
 
 ```bash
-.venv/bin/python scripts/verify_gsm8k_answers.py
+.venv/bin/python scripts/run/minimal_grpo_training.py \
+  --experiment-profile stage6-gsm8k-experiment \
+  --model-name <local-or-hub-path>
+
+.venv/bin/python scripts/run/gsm8k_eval.py \
+  --base-model <local-or-hub-path> \
+  --adapter-path outputs/stage-6-gsm8k-experiment/train/adapter \
+  --mode both --limit 50 --k 1 \
+  --train-run-config outputs/stage-6-gsm8k-experiment/train/run_config.json \
+  --train-metrics outputs/stage-6-gsm8k-experiment/train/train_metrics.json
 ```
 
-Initialize GSM8K into the project-local dataset cache:
+产出：训练侧 `run_config.json` / `train_metrics.json` / `adapter/`；评估侧 `eval/{base,adapter}/cases.jsonl`、`eval/compare/summary.json`、`eval/experiment_summary.json`。
+
+### Stage 7：云上全量训练（RunPod L40S 48GB）
 
 ```bash
-.venv/bin/python scripts/cache_gsm8k_dataset.py
+# 本地仅做配置 dry-run
+.venv/bin/python scripts/run/minimal_grpo_training.py \
+  --experiment-profile stage7-full-gsm8k-training --dry-run --train-limit 8
+.venv/bin/python scripts/run/gsm8k_sft.py --dry-run --train-limit 8
+
+# 镜像由 GitHub Actions 或 x86 builder 构建（Apple Silicon 不支持）
+scripts/runpod/build_image.sh <registry>/math-rlvr-stage7:cu128-vllm018
+
+# Pod 上分阶段执行
+bash scripts/runpod/preflight.sh
+bash scripts/runpod/smoke.sh
+nohup bash scripts/runpod/run_stage7_full.sh \
+  > outputs/stage-7-full-gsm8k-training/logs/full_pipeline.log 2>&1 &
 ```
 
-Inspect a small GSM8K subset:
+可选 SFT warm-start 后接 GRPO：
 
 ```bash
-.venv/bin/python scripts/inspect_gsm8k_dataset.py --split train --limit 3
+.venv/bin/python scripts/run/gsm8k_sft.py --output-dir outputs/stage-7-full-gsm8k-training/sft
+.venv/bin/python scripts/run/minimal_grpo_training.py \
+  --experiment-profile stage7-full-gsm8k-training \
+  --initial-adapter-path outputs/stage-7-full-gsm8k-training/sft/adapter \
+  --use-vllm --vllm-mode colocate
 ```
 
-Expected result:
+双卡时 GPU 0 训练、GPU 1 跑 `trl vllm-serve`。
 
-- The offline check passes without downloading datasets or model weights.
-- The dataset cache is stored under `data/hf_datasets/`, which is ignored by git.
-- The GSM8K inspection command prints field names, question text, raw answer text, and the extracted final answer.
-- The inspection command is read-only and does not run model generation, training, reward calculation, or scoring.
+## 六、训练成功的判据
 
-The first initialization run may need network access to download the dataset cache from Hugging Face. After the dataset is cached, later inspections can reuse `data/hf_datasets/`.
+- correctness reward 能从近 0 稳步上升，不被 format reward 压过。
+- 训练日志里的 `frac_reward_zero_std` 不持续偏高，说明 GRPO 有学习信号。
+- held-out `pass@1` 优于 base，并能保存可复跑的 LoRA adapter。
+- 评估 `cases.jsonl` 可被打开，能定位失败样例与 reward hacking 来源。
 
-## Stage 3: Reward Functions
+## 七、后续方向
 
-Run the offline reward-function check:
-
-```bash
-.venv/bin/python scripts/verify_answer_rewards.py
-```
-
-Expected result:
-
-- The check uses local hard-coded examples only.
-- Model completions use `<reasoning>...</reasoning><answer>...</answer>`.
-- The script prints each sample's extracted model answer, extracted GSM8K-style expected answer, correctness reward, and format reward.
-- Correctness reward returns `1.0` for lightweight numeric equivalence and `0.0` otherwise.
-- Format reward returns `1.0` only when both reasoning and answer tags are present and non-empty.
-- The check does not download datasets, download model weights, run model generation, train, or score an evaluation set.
-
-## Stage 4: Minimal GRPO Training
-
-Start with the dry-run. It checks dependencies, local GSM8K records, prompt formatting, reward adapters, LoRA config, and GRPO config without loading or downloading model weights:
-
-```bash
-.venv/bin/python scripts/run_minimal_grpo_training.py --dry-run
-```
-
-If the dry-run passes and the machine has enough memory plus model access, a tiny real training job still works for closure testing:
-
-```bash
-.venv/bin/python scripts/run_minimal_grpo_training.py --max-steps 1 --train-limit 2
-```
-
-Expected result:
-
-- Dry-run prints a configuration summary and exits without model download, training, or adapter saving.
-- Real training may download the configured model the first time.
-- The default model is `Qwen/Qwen2.5-0.5B-Instruct`, but `--model-name` can point to another small model or local path.
-- Training uses TRL `GRPOTrainer`, the stage 3 correctness and format rewards, and PEFT LoRA.
-- Tiny closure-test outputs go to `outputs/stage-5-real-rlvr/`, which is ignored by git.
-- On CPU-only machines, real training can be very slow; the point is closure of the training loop, not score improvement.
-
-## Stage 5: Real RLVR Training
-
-After the minimal GRPO loop is stable, stage 5 shifts to a real single-machine RLVR run with throughput-oriented defaults:
-
-```bash
-.venv/bin/python scripts/run_minimal_grpo_training.py
-```
-
-Current stage-5 defaults:
-
-- `train_limit=200`
-- `max_steps=100`
-- `per_device_train_batch_size=8`
-- `max_completion_length=48`
-- `logging_steps=10`
-- `save_steps=100`
-- `output_dir=outputs/stage-5-real-rlvr/`
-
-If you already cached the base model locally, pointing `--model-name` to the local snapshot avoids extra Hub lookup overhead.
-
-## Next Stage
-
-After stage 5 produces a more meaningful adapter, the next stage can add independent evaluation and failure analysis.
+- Math-Verify / `\boxed{}`：支持 LaTeX、分数、集合、区间等强等价判定。
+- 更大数据：MATH、DeepMath、OpenR1-Math、自建题库。
+- 多卡框架：verl / OpenRLHF + Ray + vLLM + DeepSpeed/FSDP，迁移到 1.5B / 3B / 7B。
