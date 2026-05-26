@@ -15,7 +15,7 @@
 
 ## 3. 最小训练脚本
 
-- [x] 3.1 新增 `scripts/run_minimal_grpo_training.py` 作为阶段 4 入口。
+- [x] 3.1 新增 `scripts/run/minimal_grpo_training.py` 作为阶段 4 入口。
 - [x] 3.2 支持 `--help` 展示模型名、split、训练样本数、最大步数、输出目录、缓存目录和 dry-run 参数。
 - [x] 3.3 支持 `--dry-run`，只检查依赖、数据、prompt、reward 和配置，不下载模型、不训练。
 - [x] 3.4 创建 TRL `GRPOConfig`，默认使用很小训练步数、batch size、generation 数和日志间隔。

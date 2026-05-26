@@ -1,0 +1,10 @@
+.git
+.venv
+.codex
+.trae
+__pycache__
+*.pyc
+data/hf_datasets
+outputs
+*.log
+.DS_Store

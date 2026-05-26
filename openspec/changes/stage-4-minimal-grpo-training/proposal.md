@@ -22,7 +22,7 @@
 ## Impact
 
 - 可能新增 `src/` 下的训练数据与 GRPO reward 适配模块。
-- 可能新增 `scripts/run_minimal_grpo_training.py` 作为阶段 4 训练入口。
+- 可能新增 `scripts/run/minimal_grpo_training.py` 作为阶段 4 训练入口。
 - 可能更新 `.gitignore`，忽略训练输出目录，例如 `outputs/`。
 - 可能更新 `README.md`、`plan.md` 和 `AGENTS.md`。
 - 首次真实训练可能需要联网下载模型权重；dry-run 不应下载模型权重。

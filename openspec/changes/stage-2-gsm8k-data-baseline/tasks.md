@@ -26,7 +26,7 @@
 
 ## 5. 验证
 
-- [x] 5.1 运行 `.venv/bin/python scripts/smoke_check_env.py` 确认阶段 1 环境仍通过。
+- [x] 5.1 运行 `.venv/bin/python scripts/check/smoke_check_env.py` 确认阶段 1 环境仍通过。
 - [x] 5.2 运行答案抽取离线验证。
 - [x] 5.3 运行阶段 2 数据检查命令；如果网络不可用，记录数据集下载限制但保持离线测试通过。
 - [x] 5.4 运行 `openspec validate stage-2-gsm8k-data-baseline --strict`。

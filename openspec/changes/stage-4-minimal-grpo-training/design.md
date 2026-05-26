@@ -28,7 +28,7 @@
 
 1. 使用一个脚本作为阶段 4 入口。
 
-   新增 `scripts/run_minimal_grpo_training.py`，集中暴露阶段 4 的学习入口。它支持 `--dry-run`、`--model-name`、`--split`、`--train-limit`、`--max-steps`、`--output-dir`、`--cache-dir` 等参数。默认值必须保守，目标是帮助学习者看到训练闭环，而不是获得好成绩。
+   新增 `scripts/run/minimal_grpo_training.py`，集中暴露阶段 4 的学习入口。它支持 `--dry-run`、`--model-name`、`--split`、`--train-limit`、`--max-steps`、`--output-dir`、`--cache-dir` 等参数。默认值必须保守，目标是帮助学习者看到训练闭环，而不是获得好成绩。
 
    备选方案是拆成多个训练、数据和配置脚本。那更接近正式工程，但会让阶段 4 的学习路径变散。
 

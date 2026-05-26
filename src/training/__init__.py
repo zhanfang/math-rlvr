@@ -1,14 +1,20 @@
-"""Compatibility facade for training helpers.
+"""Structured training helpers for local RLVR stages."""
 
-The training logic now lives under `src.training.*`. This module remains as a
-stable import surface while callers migrate incrementally.
-"""
-
-from src.gsm8k_dataset import DEFAULT_DATA_CACHE_DIR, GSM8K_CONFIG_NAME, GSM8K_DATASET_NAME
-from src.training import (
+from src.training.datasets import (
+    load_grpo_training_examples,
+    load_stage4_smoke_training_examples,
+    training_examples_to_dataset,
+    validate_grpo_training_examples,
+)
+from src.training.prompts import (
     CHAT_SYSTEM_PROMPT,
     CHAT_USER_TEMPLATE,
-    DEFAULT_LOGGING_STEPS,
+    build_grpo_chat_messages,
+    build_grpo_training_prompt,
+    maybe_load_prompt_tokenizer,
+    render_chat_prompt,
+)
+from src.training.profiles import (
     DEFAULT_LORA_ALPHA,
     DEFAULT_LORA_DROPOUT,
     DEFAULT_LORA_R,
@@ -19,45 +25,52 @@ from src.training import (
     DEFAULT_OUTPUT_DIR,
     DEFAULT_PER_DEVICE_TRAIN_BATCH_SIZE,
     DEFAULT_SAVE_STEPS,
+    DEFAULT_STAGE7_FULL_OUTPUT_DIR,
     DEFAULT_STAGE4_SMOKE_OUTPUT_DIR,
     DEFAULT_TRAINING_PROFILE,
     DEFAULT_TRAIN_LIMIT,
+    DEFAULT_LOGGING_STEPS,
+    RUNPOD_L40S_CLOUD_TARGET,
     STAGE4_SMOKE_CASES,
+    STAGE7_FULL_GSM8K_TRAIN_LIMIT,
     TRAINING_PROFILES,
     TrainingProfile,
-    broadcast_expected_answers,
-    build_failure_hint,
-    build_grpo_chat_messages,
-    build_grpo_config,
-    build_grpo_training_prompt,
-    build_lora_config,
-    build_run_summary,
-    collect_dependency_versions,
     get_training_profile,
-    load_grpo_training_examples,
-    load_stage4_smoke_training_examples,
-    maybe_load_prompt_tokenizer,
+)
+from src.training.reward_adapters import (
+    broadcast_expected_answers,
     normalize_completion_text,
-    print_summary,
-    render_chat_prompt,
     score_grpo_correctness_rewards,
     score_grpo_format_rewards,
     self_check_reward_adapters,
-    training_examples_to_dataset,
-    validate_grpo_training_examples,
+)
+from src.training.runtime import (
+    build_failure_hint,
+    build_grpo_config,
+    build_lora_config,
+    build_run_summary,
+    collect_dependency_versions,
+    print_summary,
     write_run_summary_json,
     write_training_metrics_json,
+)
+from src.training.sft import (
+    build_sft_assistant_completion,
+    extract_gsm8k_reasoning,
+    load_sft_training_examples,
+    render_sft_training_text,
+    sft_examples_to_dataset,
+    validate_sft_training_examples,
 )
 
 __all__ = [
     "CHAT_SYSTEM_PROMPT",
     "CHAT_USER_TEMPLATE",
-    "DEFAULT_DATA_CACHE_DIR",
-    "DEFAULT_LOGGING_STEPS",
     "DEFAULT_LORA_ALPHA",
     "DEFAULT_LORA_DROPOUT",
     "DEFAULT_LORA_R",
     "DEFAULT_LORA_TARGET_MODULES",
+    "DEFAULT_LOGGING_STEPS",
     "DEFAULT_MAX_COMPLETION_LENGTH",
     "DEFAULT_MAX_STEPS",
     "DEFAULT_MODEL_NAME",
@@ -65,11 +78,12 @@ __all__ = [
     "DEFAULT_PER_DEVICE_TRAIN_BATCH_SIZE",
     "DEFAULT_SAVE_STEPS",
     "DEFAULT_STAGE4_SMOKE_OUTPUT_DIR",
+    "DEFAULT_STAGE7_FULL_OUTPUT_DIR",
     "DEFAULT_TRAINING_PROFILE",
     "DEFAULT_TRAIN_LIMIT",
-    "GSM8K_CONFIG_NAME",
-    "GSM8K_DATASET_NAME",
+    "RUNPOD_L40S_CLOUD_TARGET",
     "STAGE4_SMOKE_CASES",
+    "STAGE7_FULL_GSM8K_TRAIN_LIMIT",
     "TRAINING_PROFILES",
     "TrainingProfile",
     "broadcast_expected_answers",
@@ -79,18 +93,24 @@ __all__ = [
     "build_grpo_training_prompt",
     "build_lora_config",
     "build_run_summary",
+    "build_sft_assistant_completion",
     "collect_dependency_versions",
+    "extract_gsm8k_reasoning",
     "get_training_profile",
     "load_grpo_training_examples",
     "load_stage4_smoke_training_examples",
+    "load_sft_training_examples",
     "maybe_load_prompt_tokenizer",
     "normalize_completion_text",
     "print_summary",
+    "render_sft_training_text",
     "render_chat_prompt",
     "score_grpo_correctness_rewards",
     "score_grpo_format_rewards",
     "self_check_reward_adapters",
+    "sft_examples_to_dataset",
     "training_examples_to_dataset",
+    "validate_sft_training_examples",
     "validate_grpo_training_examples",
     "write_run_summary_json",
     "write_training_metrics_json",

@@ -21,7 +21,7 @@
 
 ## Impact
 
-- 可能更新 `src/` 与 `scripts/run_minimal_grpo_training.py` 的默认训练参数和输出约定。
+- 可能更新 `src/` 与 `scripts/run/minimal_grpo_training.py` 的默认训练参数和输出约定。
 - 可能新增或更新阶段 5 训练输出目录，例如 `outputs/stage-5-real-rlvr/`。
 - 可能更新 `README.md`、`plan.md` 和 `AGENTS.md`，说明阶段 5 的训练规模与资源预期。
 - 阶段 5 会继续复用本地缓存模型和 GSM8K 数据，不引入 wandb、vLLM、Math-Verify、Ray、DeepSpeed、FSDP、verl、OpenRLHF 或多机多卡。
