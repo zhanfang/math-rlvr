@@ -39,6 +39,16 @@ Stage 6 keeps `.venv/bin/python scripts/run/minimal_grpo_training.py` for traini
 
 Stage 7 adds the `stage7-full-gsm8k-training` profile for cloud full-run experiments. The recommended target is a RunPod on-demand Pod with `1 x NVIDIA L40S 48GB`, `16 vCPU+`, `64GB RAM+`, `200GB+` disk, and vLLM colocate mode. Use a prebuilt project image from `docker/runpod-stage7/Dockerfile`, based on `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, rather than installing open-ended dependencies on a paid GPU Pod. Build that image on a native `linux/amd64` builder; Apple Silicon local builds are too slow for the Stage 7 image and are guarded by `scripts/runpod/build_image.sh`. `.github/workflows/build-runpod-stage7.yml` provides a manual GitHub Actions builder that pushes to Docker Hub when `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets are configured. Two-GPU RunPod runs may use GPU 0 for GRPO training and GPU 1 for `trl vllm-serve`. Stage 7 allows CUDA and vLLM; it still does not require Ray, DeepSpeed, FSDP, verl, OpenRLHF, wandb, Math-Verify, or larger models.
 
+Stage 7 also has a Merlin devbox fallback chain for environments where Hugging Face is reachable but `trl/vllm` compatibility is unstable. Use the `stage7-merlin-a10-qwen15b-no-vllm` profile with `Qwen2.5-1.5B-Instruct` stored under `/mlx_devbox/users/<user>/playground/models/Qwen2.5-1.5B-Instruct`, a project-local `.venv`, and `requirements-merlin-stage7.txt`. The reusable entrypoints are:
+
+```bash
+bash scripts/check/merlin_stage7_preflight.sh
+RUN_NAME=train-50 TRAIN_LIMIT=256 MAX_STEPS=50 LOGGING_STEPS=5 SAVE_STEPS=25 bash scripts/run/merlin_stage7_qwen15b_no_vllm.sh
+RUN_NAME=train MAX_STEPS=400 TRAIN_LIMIT=7473 bash scripts/run/merlin_stage7_qwen15b_no_vllm.sh
+```
+
+The Merlin chain uses no vLLM, keeps `per_device_train_batch_size=1`, `gradient_accumulation_steps=4`, `steps_per_generation=4`, and `num_generations=4`, and writes outputs under `outputs/stage-7-merlin-a10-qwen15b/`.
+
 Stage 7 also includes optional SFT warm-start through `.venv/bin/python scripts/run/gsm8k_sft.py`. Use `--initial-adapter-path outputs/stage-7-full-gsm8k-training/sft/adapter` to continue GRPO from that SFT adapter. Dry-runs must not load model weights or save adapters.
 
 For RunPod, use the staged scripts in order:
@@ -74,6 +84,14 @@ Before reporting stage-7 cloud configuration or SFT changes as complete, run the
 .venv/bin/python scripts/run/minimal_grpo_training.py --experiment-profile stage7-full-gsm8k-training --dry-run --train-limit 8
 .venv/bin/python scripts/run/gsm8k_sft.py --dry-run --train-limit 8
 openspec validate stage-7-full-gsm8k-training --strict
+```
+
+Before reporting the Merlin stage-7 fallback chain as complete, run:
+
+```bash
+.venv/bin/python -m py_compile src/training/profiles.py scripts/run/minimal_grpo_training.py scripts/run/gsm8k_eval.py
+bash scripts/check/merlin_stage7_preflight.sh
+RUN_NAME=train-50 TRAIN_LIMIT=256 MAX_STEPS=50 LOGGING_STEPS=5 SAVE_STEPS=25 bash scripts/run/merlin_stage7_qwen15b_no_vllm.sh
 ```
 
 Expected stage-6 checks:

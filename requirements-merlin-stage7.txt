@@ -1,0 +1,13 @@
+# Stage 7 Merlin devbox environment.
+#
+# Validated on a Merlin A10 worker without vLLM. This environment targets the
+# reusable no-vLLM GRPO chain for Qwen2.5-1.5B-Instruct.
+torch==2.7.1
+torchvision==0.22.1
+torchaudio==2.7.1
+transformers>=4.46,<5
+huggingface-hub>=0.34,<1.0
+datasets>=4.7,<5
+accelerate>=1.4,<2
+peft>=0.14,<0.15
+trl==1.4.0

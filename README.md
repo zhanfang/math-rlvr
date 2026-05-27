@@ -66,7 +66,7 @@ python -m pip install -r requirements.txt
 .venv/bin/python scripts/check/smoke_check_env.py
 ```
 
-要求 Python ≥ 3.10，`torch / transformers / datasets / accelerate / peft / trl` 可正常导入。Stage 1～6 不强依赖 CUDA/vLLM；Stage 7 在 RunPod 上启用 CUDA + vLLM。
+要求 Python ≥ 3.10，`torch / transformers / datasets / accelerate / peft / trl` 可正常导入。Stage 1～6 不强依赖 CUDA/vLLM；Stage 7 支持两条云上链路：RunPod L40S + vLLM，或 Merlin A10 + no-vLLM。
 
 ## 五、各阶段速查
 
@@ -155,6 +155,49 @@ nohup bash scripts/runpod/run_stage7_full.sh \
 ```
 
 双卡时 GPU 0 训练、GPU 1 跑 `trl vllm-serve`。
+
+### Stage 7：云上训练（Merlin Devbox A10 24GB）
+
+这条链路固定使用：
+
+- 模型：开发机共享目录下的 `Qwen2.5-1.5B-Instruct`
+- 训练：`stage7-merlin-a10-qwen15b-no-vllm`
+- 环境：项目内 `.venv` + [requirements-merlin-stage7.txt](file:///Users/bytedance/Documents/code/github/math-rlvr/requirements-merlin-stage7.txt)
+- 生成：**不启用 vLLM**，避免 Merlin 上的 `trl / vllm / torch` 兼容问题
+
+第一次在开发机上执行：
+
+```bash
+cd /mlx_devbox/users/zhanfang.128/playground/math-rlvr
+bash scripts/check/merlin_stage7_preflight.sh
+```
+
+约定目录：
+
+- 项目：`/mlx_devbox/users/<user>/playground/math-rlvr`
+- 模型：`/mlx_devbox/users/<user>/playground/models/Qwen2.5-1.5B-Instruct`
+- HF 缓存：`/mlx_devbox/users/<user>/playground/hf_home`
+
+50 步验证版：
+
+```bash
+cd /mlx_devbox/users/zhanfang.128/playground/math-rlvr
+RUN_NAME=train-50 TRAIN_LIMIT=256 MAX_STEPS=50 LOGGING_STEPS=5 SAVE_STEPS=25 \
+  bash scripts/run/merlin_stage7_qwen15b_no_vllm.sh
+```
+
+400 步正式版：
+
+```bash
+cd /mlx_devbox/users/zhanfang.128/playground/math-rlvr
+RUN_NAME=train MAX_STEPS=400 TRAIN_LIMIT=7473 \
+  bash scripts/run/merlin_stage7_qwen15b_no_vllm.sh
+```
+
+训练完成后会自动跑评估，产出位于：
+
+- 训练：`outputs/stage-7-merlin-a10-qwen15b/<run_name>/`
+- 评估：`outputs/stage-7-merlin-a10-qwen15b/<run_name>/eval/`
 
 ## 六、训练成功的判据
 

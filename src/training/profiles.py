@@ -41,6 +41,17 @@ RUNPOD_L40S_CLOUD_TARGET: dict[str, Any] = {
     "server_mode_note": "Use GPU 0 for GRPO training and GPU 1 for trl vllm-serve when renting 2 GPUs.",
 }
 
+MERLIN_A10_CLOUD_TARGET: dict[str, Any] = {
+    "provider": "Merlin Devbox Worker",
+    "resource_type": "workspace",
+    "gpu": "NVIDIA A10",
+    "gpu_memory_gb": 24,
+    "gpu_count": 1,
+    "system_memory_gb": 124,
+    "cpu_cores": 31,
+    "runtime_note": "Validated on a Merlin devbox worker with a project-local virtualenv and no vLLM.",
+}
+
 STAGE4_SMOKE_CASES: tuple[tuple[str, str], ...] = (
     ("What is 6 multiplied by 7?", "42"),
     ("A basket has 8 apples and then gets 5 more apples. How many apples are in the basket now?", "13"),
@@ -188,6 +199,41 @@ TRAINING_PROFILES: dict[str, TrainingProfile] = {
         lora_dropout=0.05,
         lora_target_modules=DEFAULT_LORA_TARGET_MODULES,
         cloud_target=RUNPOD_L40S_CLOUD_TARGET,
+    ),
+    "stage7-merlin-a10-qwen15b-no-vllm": TrainingProfile(
+        name="stage7-merlin-a10-qwen15b-no-vllm",
+        description="Stage 7 Merlin devbox A10 profile validated with Qwen2.5-1.5B-Instruct and no vLLM.",
+        output_dir=Path("outputs/stage-7-merlin-a10-qwen15b/train"),
+        train_limit=STAGE7_FULL_GSM8K_TRAIN_LIMIT,
+        max_steps=400,
+        per_device_train_batch_size=1,
+        gradient_accumulation_steps=4,
+        steps_per_generation=4,
+        num_generations=4,
+        max_prompt_length=512,
+        max_completion_length=128,
+        learning_rate=5e-7,
+        correctness_reward_weight=1.0,
+        format_reward_weight=0.1,
+        beta=0.02,
+        temperature=0.7,
+        top_p=0.95,
+        top_k=50,
+        logging_steps=10,
+        save_steps=100,
+        lora_r=16,
+        lora_alpha=32,
+        lora_dropout=0.05,
+        lora_target_modules=(
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ),
+        cloud_target=MERLIN_A10_CLOUD_TARGET,
     ),
 }
 
