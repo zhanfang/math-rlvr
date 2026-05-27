@@ -3,6 +3,5 @@ __pycache__/
 *.py[cod]
 outputs/
 reports/
-/data/
 .codex/
 .trae/
