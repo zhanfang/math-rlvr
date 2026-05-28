@@ -15,11 +15,24 @@ export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-${PROJECT_ROOT}/data/hf_datasets}
 
 MODEL_NAME="${MODEL_NAME:-${PLAYGROUND_ROOT}/models/Qwen2.5-1.5B-Instruct}"
 INSTALL_DEPS="${INSTALL_DEPS:-1}"
-ALLOW_DATASET_DOWNLOAD="${ALLOW_DATASET_DOWNLOAD:-1}"
+ALLOW_DATASET_DOWNLOAD="${ALLOW_DATASET_DOWNLOAD:-0}"
 DRY_RUN_OUTPUT_DIR="${DRY_RUN_OUTPUT_DIR:-outputs/stage-7-merlin-a10-qwen15b/preflight-dry-run}"
+
+if [[ "${ALLOW_DATASET_DOWNLOAD}" == "1" ]]; then
+  export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-0}"
+  export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-0}"
+  export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-0}"
+  DATASET_MODE="online"
+else
+  export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+  export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
+  export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+  DATASET_MODE="offline"
+fi
 
 cd "${PROJECT_ROOT}"
 mkdir -p "${HF_HOME}" "${HF_DATASETS_CACHE}"
+echo "[preflight] dataset_mode=${DATASET_MODE} cache_dir=${HF_DATASETS_CACHE}"
 
 if [[ ! -x ".venv/bin/python" ]]; then
   echo "[preflight] creating project-local .venv"

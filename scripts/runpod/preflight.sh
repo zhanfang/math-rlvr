@@ -10,9 +10,13 @@ export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME/transformers}"
 export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-$PROJECT_ROOT/data/hf_datasets}"
 export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+source "$PROJECT_ROOT/scripts/runpod/common.sh"
+resolve_runpod_python
 
 mkdir -p "$HF_HOME" "$HF_DATASETS_CACHE" outputs/stage-7-full-gsm8k-training/logs
+
+require_runpod_python_env
 
 "$PYTHON_BIN" - <<'PY'
 import inspect

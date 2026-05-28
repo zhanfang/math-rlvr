@@ -15,7 +15,9 @@ export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+source "$PROJECT_ROOT/scripts/runpod/common.sh"
+resolve_runpod_python
 
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen2.5-1.5B-Instruct}"
 RUN_DIR="${RUN_DIR:-outputs/stage-7-full-gsm8k-training-qwen15b}"
@@ -23,6 +25,8 @@ LOG_DIR="$RUN_DIR/logs"
 TRAIN_DIR="$RUN_DIR/train"
 EVAL_DIR="$RUN_DIR/eval"
 mkdir -p "$LOG_DIR" "$TRAIN_DIR" "$EVAL_DIR"
+
+require_runpod_python_env
 
 run_step() {
   local name="$1"

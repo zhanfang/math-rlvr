@@ -19,6 +19,7 @@ echo
 
 echo "[1/6] shell syntax"
 bash -n \
+  scripts/runpod/common.sh \
   scripts/runpod/preflight.sh \
   scripts/runpod/smoke.sh \
   scripts/runpod/run_stage7_full.sh

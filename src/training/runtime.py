@@ -180,6 +180,12 @@ def write_training_metrics_json(output_dir: Path, metrics: dict[str, Any]) -> No
 
 
 def build_failure_hint(error: BaseException) -> str:
+    if isinstance(error, ModuleNotFoundError):
+        missing = getattr(error, "name", None) or str(error)
+        return (
+            f"Python 环境缺少依赖 {missing!r}。RunPod 请使用预构建 Stage 7 镜像，"
+            "或把 PYTHON_BIN 指向已安装 requirements-runpod-stage7.txt 的解释器。"
+        )
     text = str(error)
     lowered = text.lower()
     if "connection" in lowered or "network" in lowered or "not found" in lowered or "401" in lowered:

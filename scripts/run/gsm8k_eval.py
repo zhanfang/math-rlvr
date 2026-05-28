@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import json
 import argparse
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +31,6 @@ from src.gsm8k_experiment import (
     read_optional_json,
     summarize_evaluation,
     write_json,
-    write_jsonl,
 )
 from src.training import DEFAULT_MODEL_NAME
 
@@ -85,6 +86,12 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_STAGE6_FAILURE_SAMPLE_LIMIT,
         help="Representative samples to save per failure type.",
     )
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=5,
+        help="Print evaluation progress every N examples. Set to 0 to disable periodic progress logs.",
+    )
     return parser.parse_args()
 
 
@@ -95,6 +102,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--k must be positive")
     if args.failure_sample_limit <= 0:
         raise ValueError("--failure-sample-limit must be positive")
+    if args.progress_every < 0:
+        raise ValueError("--progress-every must be non-negative")
 
 
 def print_model_summary(label: str, summary: dict[str, Any], failure_report: dict[str, Any]) -> None:
@@ -121,6 +130,7 @@ def evaluate_model_variant(
     force_cpu: bool,
     variant_dir: Path,
     failure_sample_limit: int,
+    progress_every: int,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     model, tokenizer, device = load_generation_stack(
         base_model=base_model,
@@ -128,22 +138,40 @@ def evaluate_model_variant(
         force_cpu=force_cpu,
     )
     print(f"\nEvaluating {label} on device={device}")
+    total = len(examples)
+    started_at = time.perf_counter()
+    rows: list[dict[str, Any]] = []
+    cases_path = variant_dir / "cases.jsonl"
+    cases_path.write_text("", encoding="utf-8")
 
-    rows = [
-        evaluate_single_case(
-            model=model,
-            tokenizer=tokenizer,
-            example=example,
-            k=k,
-            max_new_tokens=max_new_tokens,
-            model_label=label,
-        )
-        for example in examples
-    ]
+    with cases_path.open("a", encoding="utf-8") as cases_handle:
+        for index, example in enumerate(examples, start=1):
+            row = evaluate_single_case(
+                model=model,
+                tokenizer=tokenizer,
+                example=example,
+                k=k,
+                max_new_tokens=max_new_tokens,
+                model_label=label,
+            )
+            rows.append(row)
+            cases_handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+            cases_handle.flush()
+
+            should_log = progress_every > 0 and (index % progress_every == 0 or index == total)
+            if should_log:
+                elapsed = time.perf_counter() - started_at
+                avg_seconds = elapsed / index
+                remaining = max(total - index, 0) * avg_seconds
+                print(
+                    f"[progress] label={label} completed={index}/{total} "
+                    f"elapsed_sec={elapsed:.1f} avg_sec_per_case={avg_seconds:.1f} "
+                    f"eta_sec={remaining:.1f} cases_path={cases_path}",
+                    flush=True,
+                )
 
     summary = summarize_evaluation(rows, requested_k=k)
     failure_report = build_failure_report(rows, max_samples_per_type=failure_sample_limit)
-    write_jsonl(variant_dir / "cases.jsonl", rows)
     write_json(variant_dir / "summary.json", summary)
     write_json(variant_dir / "failure_report.json", failure_report)
     return rows, summary, failure_report
@@ -179,6 +207,7 @@ def main() -> int:
             force_cpu=args.use_cpu,
             variant_dir=ensure_directory(output_dir / "base"),
             failure_sample_limit=args.failure_sample_limit,
+            progress_every=args.progress_every,
         )
         print_model_summary("base", base_summary, base_failure_report)
 
@@ -193,6 +222,7 @@ def main() -> int:
             force_cpu=args.use_cpu,
             variant_dir=ensure_directory(output_dir / "adapter"),
             failure_sample_limit=args.failure_sample_limit,
+            progress_every=args.progress_every,
         )
         print_model_summary("adapter", adapter_summary, adapter_failure_report)
 

@@ -34,6 +34,11 @@ def parse_args() -> argparse.Namespace:
         default=["train", "test"],
         help="GSM8K splits to initialize.",
     )
+    parser.add_argument(
+        "--local-files-only",
+        action="store_true",
+        help="Require the dataset to be already cached locally and avoid any network access.",
+    )
     return parser.parse_args()
 
 
@@ -42,7 +47,7 @@ def main() -> int:
     cache_dir = Path(args.cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    from datasets import load_dataset
+    from datasets import DownloadConfig, load_dataset
 
     print("Initialize project-local GSM8K cache")
     print("=" * 38)
@@ -50,6 +55,12 @@ def main() -> int:
     print(f"config: {GSM8K_CONFIG_NAME}")
     print(f"cache_dir: {cache_dir}")
     print("mode: dataset cache only; no model weights, generation, training, reward, or scoring")
+    print(f"local_files_only: {args.local_files_only}")
+
+    download_config = DownloadConfig(
+        local_files_only=args.local_files_only,
+        max_retries=0 if args.local_files_only else 1,
+    )
 
     for split in args.splits:
         dataset = load_dataset(
@@ -57,6 +68,7 @@ def main() -> int:
             GSM8K_CONFIG_NAME,
             split=split,
             cache_dir=str(cache_dir),
+            download_config=download_config,
         )
         print(f"\n[{split}] rows={len(dataset)} fields={list(dataset.column_names)}")
 

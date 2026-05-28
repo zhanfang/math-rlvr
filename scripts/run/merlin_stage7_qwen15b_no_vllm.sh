@@ -22,7 +22,7 @@ RUN_DIR="${RUN_DIR:-outputs/stage-7-merlin-a10-qwen15b/${RUN_NAME}}"
 TRAIN_DIR="${RUN_DIR}"
 LOG_DIR="${RUN_DIR}/logs"
 EVAL_DIR="${RUN_DIR}/eval"
-ALLOW_DATASET_DOWNLOAD="${ALLOW_DATASET_DOWNLOAD:-1}"
+ALLOW_DATASET_DOWNLOAD="${ALLOW_DATASET_DOWNLOAD:-0}"
 TRAIN_LIMIT="${TRAIN_LIMIT:-7473}"
 MAX_STEPS="${MAX_STEPS:-400}"
 LOGGING_STEPS="${LOGGING_STEPS:-10}"
@@ -30,7 +30,20 @@ SAVE_STEPS="${SAVE_STEPS:-100}"
 EVAL_LIMIT="${EVAL_LIMIT:-200}"
 MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-192}"
 
+if [[ "${ALLOW_DATASET_DOWNLOAD}" == "1" ]]; then
+  export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-0}"
+  export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-0}"
+  export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-0}"
+  DATASET_MODE="online"
+else
+  export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+  export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
+  export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+  DATASET_MODE="offline"
+fi
+
 mkdir -p "${TRAIN_DIR}" "${LOG_DIR}" "${EVAL_DIR}" "${HF_HOME}" "${HF_DATASETS_CACHE}"
+echo "[merlin-train] dataset_mode=${DATASET_MODE} cache_dir=${HF_DATASETS_CACHE}" | tee -a "${LOG_DIR}/pipeline.log"
 
 if [[ ! -x "${PYTHON_BIN}" ]]; then
   echo "[merlin-train] python not found: ${PYTHON_BIN}" >&2
