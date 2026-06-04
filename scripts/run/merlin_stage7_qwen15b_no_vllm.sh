@@ -29,6 +29,12 @@ LOGGING_STEPS="${LOGGING_STEPS:-10}"
 SAVE_STEPS="${SAVE_STEPS:-100}"
 EVAL_LIMIT="${EVAL_LIMIT:-200}"
 MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-192}"
+MAX_COMPLETION_LENGTH="${MAX_COMPLETION_LENGTH:-}"
+LEARNING_RATE="${LEARNING_RATE:-}"
+BETA="${BETA:-}"
+CORRECTNESS_REWARD_WEIGHT="${CORRECTNESS_REWARD_WEIGHT:-}"
+FORMAT_REWARD_WEIGHT="${FORMAT_REWARD_WEIGHT:-}"
+INITIAL_ADAPTER_PATH="${INITIAL_ADAPTER_PATH:-}"
 
 if [[ "${ALLOW_DATASET_DOWNLOAD}" == "1" ]]; then
   export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-0}"
@@ -60,6 +66,30 @@ if [[ "${ALLOW_DATASET_DOWNLOAD}" == "1" ]]; then
   dataset_args+=(--allow-dataset-download)
 fi
 
+train_extra_args=()
+if [[ -n "${MAX_COMPLETION_LENGTH}" ]]; then
+  train_extra_args+=(--max-completion-length "${MAX_COMPLETION_LENGTH}")
+fi
+if [[ -n "${LEARNING_RATE}" ]]; then
+  train_extra_args+=(--learning-rate "${LEARNING_RATE}")
+fi
+if [[ -n "${BETA}" ]]; then
+  train_extra_args+=(--beta "${BETA}")
+fi
+if [[ -n "${CORRECTNESS_REWARD_WEIGHT}" ]]; then
+  train_extra_args+=(--correctness-reward-weight "${CORRECTNESS_REWARD_WEIGHT}")
+fi
+if [[ -n "${FORMAT_REWARD_WEIGHT}" ]]; then
+  train_extra_args+=(--format-reward-weight "${FORMAT_REWARD_WEIGHT}")
+fi
+if [[ -n "${INITIAL_ADAPTER_PATH}" ]]; then
+  if [[ ! -d "${INITIAL_ADAPTER_PATH}" ]]; then
+    echo "[merlin-train] initial adapter path not found: ${INITIAL_ADAPTER_PATH}" >&2
+    exit 1
+  fi
+  train_extra_args+=(--initial-adapter-path "${INITIAL_ADAPTER_PATH}")
+fi
+
 run_step() {
   local name="$1"
   shift
@@ -80,7 +110,8 @@ run_step train \
     --max-steps "${MAX_STEPS}" \
     --logging-steps "${LOGGING_STEPS}" \
     --save-steps "${SAVE_STEPS}" \
-    "${dataset_args[@]}"
+    "${dataset_args[@]}" \
+    "${train_extra_args[@]}"
 
 run_step eval \
   "${PYTHON_BIN}" scripts/run/gsm8k_eval.py \
