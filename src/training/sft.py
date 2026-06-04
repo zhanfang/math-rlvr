@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
+
+_GSM8K_EQUATION_TAG_PATTERN = re.compile(r"<<[^>]*>>")
 
 from src.gsm8k_dataset import (
     DEFAULT_DATA_CACHE_DIR,
@@ -22,11 +25,17 @@ from src.training.prompts import (
 
 
 def extract_gsm8k_reasoning(answer: str) -> str:
-    """Return the supervised reasoning text before GSM8K's final answer marker."""
+    """Return the supervised reasoning text before GSM8K's final answer marker.
+
+    Strips GSM8K's ``<<expr=value>>`` calculator-annotation tags so SFT does not
+    teach the model to copy the short single-equation template that hijacks
+    multi-step reasoning (see iter3 analysis).
+    """
     if "####" in answer:
         reasoning = answer.rsplit("####", 1)[0]
     else:
         reasoning = answer
+    reasoning = _GSM8K_EQUATION_TAG_PATTERN.sub("", reasoning)
     return reasoning.strip()
 
 
